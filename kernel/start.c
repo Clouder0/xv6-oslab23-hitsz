@@ -50,6 +50,13 @@ start()
   int id = r_mhartid();
   w_tp(id);
 
+  if (cpuid() == 0) {
+    // init uart and printf
+    consoleinit();
+    printfinit();
+    printf("200111113\n");
+  }
+
   // switch to supervisor mode and jump to main().
   asm volatile("mret");
 }
