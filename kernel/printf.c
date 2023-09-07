@@ -61,8 +61,18 @@ printptr(uint64 x)
 
 // Print to the console. only understands %d, %x, %p, %s.
 void
-printf(char *fmt, ...)
+#ifdef TEST
+_printf(const char *filename, unsigned int line, char *fmt, ...)
+#else
+_printf(char *fmt, ...)
+#endif
 {
+#ifdef TEST
+  static const char *str1 = "\033[0;36m";
+  static const char *str2 = ":\033[0;35m";
+  static const char *str3 = "\t\033[0;32m";
+  static const char *str4 = "\033[0m";
+#endif
   va_list ap;
   int i, c, locking;
   char *s;
@@ -74,6 +84,25 @@ printf(char *fmt, ...)
   if (fmt == 0)
     panic("null fmt");
 
+#ifdef TEST
+  for (i = 0; str1[i] != 0; i++)
+  {
+    consputc(str1[i]);
+  }
+  for (i = 0; filename[i] != 0; i++)
+  {
+    consputc(filename[i]);
+  }
+  for (i = 0; str2[i] != 0; i++)
+  {
+    consputc(str2[i]);
+  }
+  printint(line, 10, 1);
+  for (i = 0; str3[i] != 0; i++)
+  {
+    consputc(str3[i]);
+  }
+#endif
   va_start(ap, fmt);
   for(i = 0; (c = fmt[i] & 0xff) != 0; i++){
     if(c != '%'){
@@ -109,7 +138,12 @@ printf(char *fmt, ...)
       break;
     }
   }
-
+#ifdef TEST
+  for (i = 0; str4[i] != 0; i++)
+  {
+    consputc(str4[i]);
+  }
+#endif
   if(locking)
     release(&pr.lock);
 }
