@@ -77,7 +77,13 @@ int             piperead(struct pipe*, uint64, int);
 int             pipewrite(struct pipe*, uint64, int);
 
 // printf.c
-void            printf(char*, ...);
+#ifdef TEST
+#define printf(...) _printf(__FILE__, __LINE__, __VA_ARGS__)
+void            _printf(const char*, unsigned int, char*, ... );
+#else
+#define printf(...) _printf(__VA_ARGS__)
+void            _printf(char*, ... );
+#endif
 void            panic(char*) __attribute__((noreturn));
 void            printfinit(void);
 
