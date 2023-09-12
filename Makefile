@@ -74,11 +74,6 @@ ifeq "$(GCC_VER12)" "1"
 CFLAGS += -Wno-error=infinite-recursion
 endif
 
-CLANG_VER16 := $(shell expr `clang -dumpfullversion -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 160000)
-ifeq "$(CLANG_VER12)" "1"
-CFLAGS += -Wno-error=infinite-recursion
-endif
-
 ifdef LAB
 LABUPPER = $(shell echo $(LAB) | tr a-z A-Z)
 CFLAGS += -DSOL_$(LABUPPER)
