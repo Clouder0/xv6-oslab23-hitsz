@@ -321,6 +321,9 @@ grade:
           (echo "'make clean' failed.  HINT: Do you have another running instance of xv6?" && exit 1)
 	./grade-lab-$(LAB) $(GRADEFLAGS)
 
+format:
+	python3 clang-format.py
+
 ##
 ## FOR web handin
 ##
