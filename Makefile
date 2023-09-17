@@ -67,7 +67,13 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
-CFLAGS = -Wall -Werror -Wno-error=infinite-recursion -O -fno-omit-frame-pointer -ggdb -DTEST
+CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -DTEST
+
+GCC_VER12 := $(shell expr `gcc -dumpfullversion -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 120000)
+ifeq "$(GCC_VER12)" "1"
+CFLAGS += -Wno-error=infinite-recursion
+endif
+
 
 ifdef LAB
 LABUPPER = $(shell echo $(LAB) | tr a-z A-Z)
