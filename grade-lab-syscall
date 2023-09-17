@@ -5,6 +5,17 @@ from gradelib import *
 
 r = Runner(save("xv6.out"))
 
+@test(5, "exit test")
+def test_exit_test():
+    r.run_qemu(shell_script([
+        'exittest'
+    ]))
+    # r.match('[proc 3(exittest)][parent] name \\w+, state \\w+')
+    r.match('proc \\d+ exit, parent pid \\d+, name \\w+, state \\w+')
+    r.match('proc \\d+ exit, child 0, pid \\d+, name \\w+, state \\w+')
+    r.match('proc \\d+ exit, child 1, pid \\d+, name \\w+, state \\w+')
+    r.match('proc \\d+ exit, child 2, pid \\d+, name \\w+, state \\w+')
+
 @test(5, "trace 32 grep")
 def test_trace_32_grep():
     r.run_qemu(shell_script([
