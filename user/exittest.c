@@ -15,21 +15,8 @@ void exittest(void) {
         }
     }
 
-    exit(0);
-
-    // for (int i = 0; i < 3; i++) {
-    //     if (wait(0, nonblock) < 0) {
-    //         printf("no child exited yet, round %d\n", i);
-    //     } else {
-    //         printf("wait shouldn't block!\n");
-    //         printf("wait test FAIL\n");
-    //         exit(1);
-    //     }
-    // }
-    // int child_pid = wait(0, 0);
-    // printf("child exited, pid %d\n", child_pid);
-
-    printf("exit test OK\n");
+    // exit(0);
+    // printf("exit test OK\n");
 }
 
 int main(int argc, char *argv[]) {
