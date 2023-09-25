@@ -241,6 +241,9 @@ grade:
 format:
 	python3 clang-format.py
 
+diff:
+	git diff syscall-base HEAD > commit.patch
+
 ##
 ## FOR web handin
 ##
