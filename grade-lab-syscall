@@ -8,9 +8,10 @@ r = Runner(save("xv6.out"))
 
 @test(40, "exit test")
 def test_exit_test():
+    subprocess.run(["make", "clean"])
     r.run_qemu(shell_script([
         'exittest'
-    ]))
+    ]), make_args=["LAB_SYSCALL_TEST=on"])
     r.match('proc \\d+ exit, parent pid \\d+, name \\w+, state \\w+')
     r.match('proc \\d+ exit, child 0, pid \\d+, name \\w+, state \\w+')
     r.match('proc \\d+ exit, child 1, pid \\d+, name \\w+, state \\w+')
@@ -20,14 +21,14 @@ def test_exit_test():
 def test_wait_test():
     r.run_qemu(shell_script([
         'waittest'
-    ]))
+    ]), make_args=["LAB_SYSCALL_TEST=on"])
     r.match('wait test OK')
 
 @test(19, "yield test")
 def test_yield_test():
     r.run_qemu(shell_script([
         'yieldtest'
-    ]), make_args=["CPUS=1"])
+    ]), make_args=["CPUS=1", "LAB_SYSCALL_TEST=on"])
     r.match("parent yield")
     matches = re.findall("start to yield, user pc \w+", r.qemu.output, re.MULTILINE)
     assert_equal(len(matches), 1)
