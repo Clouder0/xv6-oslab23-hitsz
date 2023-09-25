@@ -11,12 +11,9 @@ void yieldtest(void) {
     for (int i = 0; i < 3; i++) {
         int pid = fork();
         if (pid == 0) {
-            char name[16];
-            memset(name, 0, 16);
-            char *base_name = "yield_child_";
-            memcpy(name, base_name, strlen(base_name));
+            char name[16] = "yield_child_";
             char idx = '0' + i;
-            memcpy(name + strlen(base_name), &idx, 1);
+            memcpy(name + strlen(name), &idx, 1);
             rename(name);
             int sum = 0;
             // printf("switch to parent\n");
