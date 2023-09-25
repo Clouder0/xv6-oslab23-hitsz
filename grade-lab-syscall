@@ -35,7 +35,6 @@ def test_yield_test():
     sepc = matches[0][24:]
     result = subprocess.run(["riscv64-unknown-elf-addr2line", sepc, "-f", "-s", "-e", "user/_yieldtest"], stdout=subprocess.PIPE, check=True)
     out = result.stdout.decode("utf-8")
-    print("out:", out)
     assert(len(out) > 5)
     assert_equal(out[:6], "yield\n")
     r.match("switch to child 0")
