@@ -118,7 +118,6 @@ void info_with_color(char *fmt, ...) {
   if (locking) release(&pr.lock);
 }
 
-
 // Print to the console. only understands %d, %x, %p, %s.
 void
 #ifdef TEST
