@@ -78,5 +78,6 @@ uint64 sys_rename(void) {
   }
   struct proc *p = myproc();
   memmove(p->name, name, len);
+  p->name[len] = '\0';
   return 0;
 }

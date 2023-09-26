@@ -21,7 +21,6 @@ void yieldtest(void) {
   for (int i = 0; i < 3; i++) {
     wait(0, 0);
   }
-  printf("yield test OK\n");
 }
 
 int main(int argc, char *argv[]) {

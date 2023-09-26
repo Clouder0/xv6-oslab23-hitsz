@@ -9,6 +9,7 @@ void waittest(void) {
 
   int pid = fork();
   if (pid == 0) {
+    // 这里睡眠足够长的时间，因此后面父进程进行非阻塞wait时该子进程一定还没有退出
     sleep(10);
     exit(0);
   }

@@ -10,13 +10,18 @@ void exittest(void) {
   for (int i = 0; i < 3; i++) {
     int pid = fork();
     if (pid == 0) {
+      char name[16] = "child";
+      char idx = '0' + i;
+      int len = strlen(name);
+      memmove(name + len, &idx, 1);
+      name[len + 1] = '\0';
+      rename(name);
       sleep(10);
       exit(0);
     }
   }
 
-  // exit(0);
-  // printf("exit test OK\n");
+  sleep(1);
 }
 
 int main(int argc, char *argv[]) {
