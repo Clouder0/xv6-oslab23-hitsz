@@ -16,6 +16,8 @@ void yieldtest(void) {
     }
   }
   printf("parent yield\n");
+  // yield之后
+  // 在单核情况下，调度器应当调度到子进程
   yield();
   printf("parent yield finished\n");
   for (int i = 0; i < 3; i++) {
