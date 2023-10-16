@@ -324,6 +324,8 @@ grade:
 
 diff:
 	git diff lock-base HEAD > commit.patch
+format:
+	python3 clang-format.py
 
 ##
 ## FOR web handin
