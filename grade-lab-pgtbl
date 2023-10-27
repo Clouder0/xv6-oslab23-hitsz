@@ -5,22 +5,26 @@ from gradelib import *
 
 r = Runner(save("xv6.out"))
 
-PTE_PRINT = """page table 0x0000000087f6e000
- ..0: pte 0x0000000021fda801 pa 0x0000000087f6a000
- .. ..0: pte 0x0000000021fda401 pa 0x0000000087f69000
- .. .. ..0: pte 0x0000000021fdac1f pa 0x0000000087f6b000
- .. .. ..1: pte 0x0000000021fda00f pa 0x0000000087f68000
- .. .. ..2: pte 0x0000000021fd9c1f pa 0x0000000087f67000
- ..255: pte 0x0000000021fdb401 pa 0x0000000087f6d000
- .. ..511: pte 0x0000000021fdb001 pa 0x0000000087f6c000
- .. .. ..510: pte 0x0000000021fdd807 pa 0x0000000087f76000
- .. .. ..511: pte 0x0000000020001c0b pa 0x0000000080007000"""
 
-VAL_RE = "(0x00000000[0-9a-f]+)"
-INDENT_RE = r"\s*\.\.\s*"
-INDENT_ESC = "\\\s*\.\.\\\s*"
+PTE_PRINT = """page table 0x0000000087f25000
+||idx:0: pa:0x0000000087f21000, flags: ----
+||   ||idx:0: pa:0x0000000087f20000, flags: ----
+||   ||   ||idx:0: va:0x0000000000000000 -> pa:0x0000000087f22000, flags: rwxu
+||   ||   ||idx:1: va:0x0000000000001000 -> pa:0x0000000087f1f000, flags: rwx-
+||   ||   ||idx:2: va:0x0000000000002000 -> pa:0x0000000087f1e000, flags: rwxu
+||idx:255: pa:0x0000000087f24000, flags: ----
+||   ||idx:511: pa:0x0000000087f23000, flags: ----
+||   ||   ||idx:510: va:0xffffffffffffe000 -> pa:0x0000000087f76000, flags: rw--
+||   ||   ||idx:511: va:0xfffffffffffff000 -> pa:0x0000000080007000, flags: r-x-"""
 
-@test(10, "pte printout")
+
+IDX_RE = "(idx:[0-9]+)"
+VAL_RE = "(0x[0-9a-f]+)"
+FLAGS_RE = "([-r][-w][-x][-u])"
+INDENT_RE = r"\s*\|\|\s*"
+INDENT_ESC = "\\\s*\|\|\\\s*"
+
+@test(50, "pte printout")
 def test_pteprint():
     first = True
     r.run_qemu(shell_script([
@@ -29,18 +33,29 @@ def test_pteprint():
     r.match('^hi')
     p = re.compile(VAL_RE)
     d = re.compile(INDENT_RE)
+    f = re.compile(FLAGS_RE)
     for l in PTE_PRINT.splitlines():
         l = d.sub(INDENT_ESC, l)
         l = p.sub(VAL_RE, l)
+        l = f.sub(FLAGS_RE, l)
         r.match(r'^{}$'.format(l))
+        # print("l:", l)
         if first:
             first = False
         else:
             matches = re.findall(r'^{}$'.format(l), r.qemu.output, re.MULTILINE)
-            assert_equal(len(matches[0]), 2)
-            pa = (int(matches[0][0], 16) >> 10) << 12
-            assert_equal(int(matches[0][1], 16), pa)
+            # print("matches:", matches[0])
+            idx = int(re.findall(IDX_RE, l)[0][4:])
+            # print("idx:", idx)
+            # flags = matches[0][-1]
+            # pa = matches[0][-2]
+            if len(matches[0]) > 2:
+                va = matches[0][-3]
+                # print("va:", va)
+                assert_equal((int(va, 16) >> 12) & 0x1ff, idx)
+
     
+
 @test(5, "answers-pgtbl.txt")
 def test_answers():
     # just a simple sanity check, will be graded manually
