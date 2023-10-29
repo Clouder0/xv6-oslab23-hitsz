@@ -325,6 +325,11 @@ grade:
 ## FOR web handin
 ##
 
+format:
+	python3 clang-format.py
+
+diff:
+	git diff pgtbl-base HEAD > commit.patch
 
 WEBSUB := https://6828.scripts.mit.edu/2020/handin.py
 
