@@ -180,6 +180,7 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_kvmtest\
 
 
 
@@ -324,12 +325,6 @@ grade:
 format:
 	python3 clang-format.py
 
-##
-## FOR web handin
-##
-
-format:
-	python3 clang-format.py
 
 diff:
 	git diff pgtbl-base HEAD > commit.patch

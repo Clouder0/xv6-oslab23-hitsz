@@ -371,3 +371,11 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
     return -1;
   }
 }
+
+// check if use global kpgtbl or not
+int test_pagetable() {
+  uint64 satp = r_satp();
+  uint64 gsatp = MAKE_SATP(kernel_pagetable);
+  printf("test_pagetable: %d\n", satp != gsatp);
+  return satp != gsatp;
+}
