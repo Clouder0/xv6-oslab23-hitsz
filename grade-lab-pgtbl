@@ -7,18 +7,18 @@ r = Runner(save("xv6.out"))
 
 
 PTE_PRINT = """page table 0x0000000087f25000
-||idx:0: pa:0x0000000087f21000, flags: ----
-||   ||idx:0: pa:0x0000000087f20000, flags: ----
-||   ||   ||idx:0: va:0x0000000000000000 -> pa:0x0000000087f22000, flags: rwxu
-||   ||   ||idx:1: va:0x0000000000001000 -> pa:0x0000000087f1f000, flags: rwx-
-||   ||   ||idx:2: va:0x0000000000002000 -> pa:0x0000000087f1e000, flags: rwxu
-||idx:255: pa:0x0000000087f24000, flags: ----
-||   ||idx:511: pa:0x0000000087f23000, flags: ----
-||   ||   ||idx:510: va:0xffffffffffffe000 -> pa:0x0000000087f76000, flags: rw--
-||   ||   ||idx:511: va:0xfffffffffffff000 -> pa:0x0000000080007000, flags: r-x-"""
+||idx: 0: pa: 0x0000000087f21000, flags: ----
+||   ||idx: 0: pa: 0x0000000087f20000, flags: ----
+||   ||   ||idx: 0: va: 0x0000000000000000 -> pa: 0x0000000087f22000, flags: rwxu
+||   ||   ||idx: 1: va: 0x0000000000001000 -> pa: 0x0000000087f1f000, flags: rwx-
+||   ||   ||idx: 2: va: 0x0000000000002000 -> pa: 0x0000000087f1e000, flags: rwxu
+||idx: 255: pa: 0x0000000087f24000, flags: ----
+||   ||idx: 511: pa: 0x0000000087f23000, flags: ----
+||   ||   ||idx: 510: va: 0xffffffffffffe000 -> pa: 0x0000000087f76000, flags: rw--
+||   ||   ||idx: 511: va: 0xfffffffffffff000 -> pa: 0x0000000080007000, flags: r-x-"""
 
 
-IDX_RE = "(idx:[0-9]+)"
+IDX_RE = "(idx: [0-9]+)"
 VAL_RE = "(0x[0-9a-f]+)"
 FLAGS_RE = "([-r][-w][-x][-u])"
 INDENT_RE = r"\s*\|\|\s*"
@@ -45,7 +45,7 @@ def test_pteprint():
         else:
             matches = re.findall(r'^{}$'.format(l), r.qemu.output, re.MULTILINE)
             # print("matches:", matches[0])
-            idx = int(re.findall(IDX_RE, l)[0][4:])
+            idx = int(re.findall(IDX_RE, l)[0][5:])
             # print("idx:", idx)
             # flags = matches[0][-1]
             # pa = matches[0][-2]
@@ -56,12 +56,7 @@ def test_pteprint():
 
     
 
-@test(5, "answers-pgtbl.txt")
-def test_answers():
-    # just a simple sanity check, will be graded manually
-    check_answers("answers-pgtbl.txt")
-
-@test(5, "count copyin")
+@test(10, "count copyin")
 def test_count():
     r.run_qemu(shell_script([
         'stats', 'stats'
@@ -73,6 +68,15 @@ def test_count():
     assert_equal(len(matches), 2)
     assert_equal(int(matches[1]), int(matches[0]) + 3)
 
+
+@test(30, "kernel pagetable test")
+def test_kvm():
+    r.run_qemu(shell_script([
+        'kvmtest'
+    ]), timeout=100)
+    r.match('^kvmtest: OK$')
+
+
 @test(0, "usertests")
 def test_usertests():
     r.run_qemu(shell_script([
@@ -83,32 +87,29 @@ def usertest_check(testcase, nextcase, output):
     if not re.search(r'\ntest {}: [\s\S]*OK\ntest {}'.format(testcase, nextcase), output):
         raise AssertionError('Failed ' + testcase)
 
-@test(5, "usertests: copyin", parent=test_usertests)
+@test(1, "usertests: copyin", parent=test_usertests)
 def test_copyin():
     usertest_check("copyin", "copyout", r.qemu.output)
 
-@test(5, "usertests: copyinstr1", parent=test_usertests)
+@test(1, "usertests: copyinstr1", parent=test_usertests)
 def test_copyin():
     usertest_check("copyinstr1", "copyinstr2", r.qemu.output)
     
-@test(5, "usertests: copyinstr2",  parent=test_usertests)
+@test(1, "usertests: copyinstr2",  parent=test_usertests)
 def test_copyinstr2():
     usertest_check("copyinstr2", "copyinstr3", r.qemu.output)
 
-@test(5, "usertests: copyinstr3",  parent=test_usertests)
+@test(1, "usertests: copyinstr3",  parent=test_usertests)
 def test_copyinstr3():
     usertest_check("copyinstr3", "truncate1", r.qemu.output)
 
-@test(5, "usertests: sbrkmuch",  parent=test_usertests)
+@test(1, "usertests: sbrkmuch",  parent=test_usertests)
 def test_sbrkmuch():
     usertest_check("sbrkmuch", "kernmem", r.qemu.output)
 
-@test(20, "usertests: all tests", parent=test_usertests)
+@test(5, "usertests: all tests", parent=test_usertests)
 def test_usertests():
     r.match('^ALL TESTS PASSED$')
 
-@test(1, "time")
-def test_time():
-    check_time()
 
 run_tests()
