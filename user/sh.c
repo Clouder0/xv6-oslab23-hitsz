@@ -133,6 +133,7 @@ int getcmd(char *buf, int nbuf) {
 }
 
 int main(void) {
+  printf("[220110419] start sh through execve\n");
   static char buf[100];
   int fd;
 

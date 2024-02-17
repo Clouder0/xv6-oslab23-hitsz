@@ -52,6 +52,7 @@ void start() {
     // init uart and printf
     consoleinit();
     printfinit();
+    printf("[220110419] in start, init driver, interrupts and change mode\n");
   }
 
   // switch to supervisor mode and jump to main().
