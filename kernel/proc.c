@@ -267,21 +267,42 @@ int fork(void) {
   return pid;
 }
 
+char* state2str(enum procstate state) {
+  switch (state) {
+    case UNUSED:
+      return "unused";
+    case SLEEPING:
+      return "sleep";
+    case RUNNABLE:
+      return "runble";
+    case RUNNING:
+      return "run";
+    case ZOMBIE:
+      return "zombie";
+    default:
+      return "unknown";
+  }
+}
+
 // Pass p's abandoned children to init.
 // Caller must hold p->lock.
 void reparent(struct proc *p) {
   struct proc *pp;
 
+  int child_num = 0;
   for (pp = proc; pp < &proc[NPROC]; pp++) {
     // this code uses pp->parent without holding pp->lock.
     // acquiring the lock first could cause a deadlock
     // if pp or a child of pp were also in exit()
     // and about to try to lock p.
     if (pp->parent == p) {
+
       // pp->parent can't change between the check and the acquire()
       // because only the parent changes it, and we're the parent.
       acquire(&pp->lock);
       pp->parent = initproc;
+      exit_info("proc %d exit, child %d, pid %d, name %s, state %s\n", p->pid, child_num, pp->pid, pp->name, state2str(pp->state));
+      ++child_num;
       // we should wake up init here, but that would require
       // initproc->lock, which would be a deadlock, since we hold
       // the lock on one of init's children (pp). this is why
@@ -290,6 +311,8 @@ void reparent(struct proc *p) {
     }
   }
 }
+
+
 
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
