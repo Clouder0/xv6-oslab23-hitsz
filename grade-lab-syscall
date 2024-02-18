@@ -33,7 +33,8 @@ def test_yield_test():
     matches = re.findall("start to yield, user pc \w+", r.qemu.output, re.MULTILINE)
     assert_equal(len(matches), 1)
     sepc = matches[0][24:]
-    result = subprocess.run(["riscv64-unknown-elf-addr2line", sepc, "-f", "-s", "-e", "user/_yieldtest"], stdout=subprocess.PIPE, check=True)
+    toolprefix = test_yield_test.options.toolprefix
+    result = subprocess.run([f"{toolprefix}addr2line", sepc, "-f", "-s", "-e", "user/_yieldtest"], stdout=subprocess.PIPE, check=True)
     out = result.stdout.decode("utf-8")
     assert(len(out) > 5)
     assert_equal(out[:6], "yield\n")
