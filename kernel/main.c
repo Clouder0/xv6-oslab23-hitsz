@@ -3,6 +3,8 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 volatile static int started = 0;
 
@@ -11,6 +13,7 @@ void
 main()
 {
   if(cpuid() == 0){
+    mycpu()->available = 1;
     consoleinit();
 #if defined(LAB_PGTBL) || defined(LAB_LOCK)
     statsinit();
@@ -39,6 +42,8 @@ main()
     __sync_synchronize();
     started = 1;
   } else {
+    mycpu()->available = 1;
+    __sync_synchronize();
     while(started == 0)
       ;
     __sync_synchronize();
