@@ -80,6 +80,42 @@ pte_t *walk(pagetable_t pagetable, uint64 va, int alloc) {
   return &pagetable[PX(0, va)];
 }
 
+void set_flags(pte_t *pte, char* flags) {
+  flags[0] = (*pte & PTE_R) ? 'r' : '-';
+  flags[1] = (*pte & PTE_W) ? 'w' : '-';
+  flags[2] = (*pte & PTE_X) ? 'x' : '-';
+  flags[3] = (*pte & PTE_U) ? 'u' : '-';
+}
+
+void _vmprint(pagetable_t pagetable, uint64 va, int level) {
+  char flags[5];
+  flags[4] = '\0';
+  if(level == 0) {
+    for(int i = 0; i < 512; ++i) {
+      pte_t *pte = &pagetable[i];
+      if(!(*pte & PTE_V)) continue;
+      set_flags(pte, flags);
+      uint64 pa = PTE2PA(*pte);
+      printf("||   ||   ||idx: %d: va: %p -> pa: %p, flags: %s\n", i, va | (i << PXSHIFT(0)), pa, flags);
+    }
+    return;
+  }
+  for(int i = 0; i < 512; ++i) {
+    pte_t *pte = &pagetable[i];
+    if(!(*pte & PTE_V)) continue;
+    set_flags(pte, flags);
+    if(level == 1) printf("||   ");
+    uint64 pa = PTE2PA(*pte);
+    printf("||idx: %d: pa: %p, flags: %s\n", i, pa, flags);
+    _vmprint((pagetable_t)pa, va | (i << PXSHIFT(level)), level - 1);
+  }
+}
+
+void vmprint(pagetable_t pagetable) {
+  printf("page table %p\n", pagetable);
+  _vmprint(pagetable, 0, 2);
+}
+
 // Look up a virtual address, return the physical address,
 // or 0 if not mapped.
 // Can only be used to look up user pages.
