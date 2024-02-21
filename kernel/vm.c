@@ -226,7 +226,7 @@ void uvminit(pagetable_t pagetable, uchar *src, uint sz) {
 uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz) {
   char *mem;
   uint64 a;
-
+  if(newsz >= PLIC) return oldsz;
   if (newsz < oldsz) return oldsz;
 
   oldsz = PGROUNDUP(oldsz);
@@ -261,6 +261,33 @@ uint64 uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz) {
   return newsz;
 }
 
+int sync_pagetable(pagetable_t pagetable, pagetable_t kpagetable) {
+  uint64 va;
+  for(int i = 0; i < 512;++i) {
+    if(!(pagetable[i] & PTE_V)) continue;
+    va = (i << 18) << 12;
+    if(va >= PLIC) {
+      break;
+    }
+    if(!(kpagetable[i] & PTE_V)) {
+      void* p = kalloc();      
+      if(!p) return -1;
+      memset(p, PGSIZE, 0);
+      kpagetable[i] = PA2PTE(p) | PTE_V;
+      // printf("sync: kpagetable[%d] = %p\n", i, kpagetable[i]);
+    }
+    pagetable_t sub_p = (pagetable_t)PTE2PA(pagetable[i]), sub_k = (pagetable_t)PTE2PA(kpagetable[i]);
+    for(int j = 0; j < 512; ++j) {
+      va = ((i << 18) | (j << 9)) << 12;
+      if(va >= PLIC) break;
+      if(!(sub_p[j] & PTE_V)) continue;    
+      sub_k[j] = sub_p[j];
+      // printf("sync: kpagetable[%d][%d] = %p\n", i, j, sub_k[j]);
+    }
+  }
+  return 0;
+}
+
 // Recursively free page-table pages.
 // All leaf mappings must already have been removed.
 void freewalk(pagetable_t pagetable) {
@@ -280,13 +307,18 @@ void freewalk(pagetable_t pagetable) {
 }
 
 void freewalk_noclean(pagetable_t pagetable) {
+  printf("enter freewalk\n");
   for(int i = 0; i < 512; ++i) {
     pte_t pte = pagetable[i];
-    if((pte & PTE_V) && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {
-      uint64 child = PTE2PA(pte);
-      freewalk_noclean((pagetable_t)child);
-      pagetable[i] = 0;
+    if(!(pte & PTE_V)) continue;
+    pagetable_t sub = (pagetable_t)PTE2PA(pte);
+    for(int j = 0; j < 512; ++j) {
+      if(!(sub[j] & PTE_V)) continue;
+      int va = ((i << 18) | (j << 9)) << 12;
+      // don't free user space memory
+      if(va >= PLIC) kfree((void*)PTE2PA(sub[j]));
     }
+    kfree((void*)sub);
   }
   kfree((void*)pagetable);
 }

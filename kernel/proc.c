@@ -253,11 +253,13 @@ void userinit(void) {
 
   p = allocproc();
   initproc = p;
+  printf("userinit\n");
 
   // allocate one user page and copy init's instructions
   // and data into it.
   uvminit(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
+  sync_pagetable(p->pagetable,p->kpagetable);
 
   // prepare for the very first "return" from kernel to user.
   p->trapframe->epc = 0;      // user program counter
@@ -269,6 +271,7 @@ void userinit(void) {
   p->state = RUNNABLE;
 
   release(&p->lock);
+  printf("userinitdone\n");
 }
 
 // Grow or shrink user memory by n bytes.
@@ -282,6 +285,7 @@ int growproc(int n) {
     if ((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
       return -1;
     }
+    sync_pagetable(p->pagetable,p->kpagetable);
   } else if (n < 0) {
     sz = uvmdealloc(p->pagetable, sz, sz + n);
   }
@@ -308,6 +312,7 @@ int fork(void) {
     return -1;
   }
   np->sz = p->sz;
+  sync_pagetable(np->pagetable,np->kpagetable);
 
   np->parent = p;
 
