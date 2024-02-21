@@ -116,7 +116,6 @@ found:
 
   p->kpagetable = proc_kpagetable(p);
   if (p->kpagetable == 0) {
-    proc_freepagetable(p->pagetable, p->sz);
     freeproc(p);
     release(&p->lock);
     return 0;
@@ -208,17 +207,14 @@ pagetable_t proc_kpagetable(struct proc *p) {
   // map kernel stack
   for (struct proc *t = proc; t < &proc[NPROC]; t++) {
     if (mappages(pagetable, t->kstack, PGSIZE, t->kstack_pa, PTE_R | PTE_W) < 0) {
-      // printf("map kernelstack failed");
       // goto fail_kernelstack;
       goto fail;
     }
   }
-  // printf("allocated pagetable %p\n", pagetable);
   return pagetable;
 
 fail:
   freewalk_noclean(pagetable);
-  printf("failed");
   return 0;
 }
 
@@ -285,7 +281,9 @@ int growproc(int n) {
     if ((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
       return -1;
     }
-    sync_pagetable(p->pagetable,p->kpagetable);
+    if(sync_pagetable(p->pagetable,p->kpagetable) < 0) {
+      return -1;
+    }
   } else if (n < 0) {
     sz = uvmdealloc(p->pagetable, sz, sz + n);
   }
@@ -312,7 +310,11 @@ int fork(void) {
     return -1;
   }
   np->sz = p->sz;
-  sync_pagetable(np->pagetable,np->kpagetable);
+  if(sync_pagetable(np->pagetable,np->kpagetable) < 0) {
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
 
   np->parent = p;
 
@@ -367,7 +369,6 @@ void reparent(struct proc *p) {
 // until its parent calls wait().
 void exit(int status) {
   struct proc *p = myproc();
-
   if (p == initproc) panic("init exiting");
 
   // Close all open files.
@@ -503,9 +504,7 @@ void scheduler(void) {
         c->proc = p;
         w_satp(MAKE_SATP(p->kpagetable));  // set kernel pagetable
         sfence_vma();
-        printf("switch into pid %d\n", p->pid);
         swtch(&c->context, &p->context);
-        printf("switch back to kernel, kernel pagetable %p\n", kernel_pagetable);
         w_satp(MAKE_SATP(kernel_pagetable));  // process run finished, set to global
         sfence_vma();
 

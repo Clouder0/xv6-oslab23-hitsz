@@ -104,7 +104,6 @@ void syscall(void) {
   struct proc *p = myproc();
 
   num = p->trapframe->a7;
-  printf("pid %d syscall %d nowpagetable %p\n", p->pid, num, r_satp() << 12);
   if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     p->trapframe->a0 = syscalls[num]();
   } else {

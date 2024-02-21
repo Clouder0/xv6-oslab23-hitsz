@@ -271,18 +271,17 @@ int sync_pagetable(pagetable_t pagetable, pagetable_t kpagetable) {
     }
     if(!(kpagetable[i] & PTE_V)) {
       void* p = kalloc();      
-      if(!p) return -1;
+      if(p == 0) {
+        return -1;
+      }
       memset(p, PGSIZE, 0);
       kpagetable[i] = PA2PTE(p) | PTE_V;
-      // printf("sync: kpagetable[%d] = %p\n", i, kpagetable[i]);
     }
     pagetable_t sub_p = (pagetable_t)PTE2PA(pagetable[i]), sub_k = (pagetable_t)PTE2PA(kpagetable[i]);
     for(int j = 0; j < 512; ++j) {
       va = ((i << 18) | (j << 9)) << 12;
       if(va >= PLIC) break;
-      if(!(sub_p[j] & PTE_V)) continue;    
       sub_k[j] = sub_p[j];
-      // printf("sync: kpagetable[%d][%d] = %p\n", i, j, sub_k[j]);
     }
   }
   return 0;
@@ -307,20 +306,20 @@ void freewalk(pagetable_t pagetable) {
 }
 
 void freewalk_noclean(pagetable_t pagetable) {
-  printf("enter freewalk\n");
-  for(int i = 0; i < 512; ++i) {
+  int freed = 0;
+  for(uint64 i = 0; i < 512; ++i) {
     pte_t pte = pagetable[i];
     if(!(pte & PTE_V)) continue;
     pagetable_t sub = (pagetable_t)PTE2PA(pte);
-    for(int j = 0; j < 512; ++j) {
+    for(uint64 j = 0; j < 512; ++j) {
       if(!(sub[j] & PTE_V)) continue;
-      int va = ((i << 18) | (j << 9)) << 12;
+      uint64 va = ((i << 18) | (j << 9)) << 12;
       // don't free user space memory
-      if(va >= PLIC) kfree((void*)PTE2PA(sub[j]));
+      if(va >= PLIC) kfree((void*)PTE2PA(sub[j])), ++freed;
     }
-    kfree((void*)sub);
+    kfree((void*)sub), ++freed;
   }
-  kfree((void*)pagetable);
+  kfree((void*)pagetable), ++freed;
 }
 
 // Free user memory pages,
@@ -396,21 +395,10 @@ int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len) {
 // Copy len bytes to dst from virtual address srcva in a given page table.
 // Return 0 on success, -1 on error.
 int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
-  uint64 n, va0, pa0;
-
-  while (len > 0) {
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if (pa0 == 0) return -1;
-    n = PGSIZE - (srcva - va0);
-    if (n > len) n = len;
-    memmove(dst, (void *)(pa0 + (srcva - va0)), n);
-
-    len -= n;
-    dst += n;
-    srcva = va0 + PGSIZE;
-  }
-  return 0;
+  w_sstatus(r_sstatus() | SSTATUS_SUM);
+  int ret = copyin_new(pagetable, dst, srcva, len);
+  w_sstatus(r_sstatus() & ~SSTATUS_SUM);
+  return ret;
 }
 
 // Copy a null-terminated string from user to kernel.
@@ -418,38 +406,10 @@ int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
 // until a '\0', or max.
 // Return 0 on success, -1 on error.
 int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
-  uint64 n, va0, pa0;
-  int got_null = 0;
-
-  while (got_null == 0 && max > 0) {
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if (pa0 == 0) return -1;
-    n = PGSIZE - (srcva - va0);
-    if (n > max) n = max;
-
-    char *p = (char *)(pa0 + (srcva - va0));
-    while (n > 0) {
-      if (*p == '\0') {
-        *dst = '\0';
-        got_null = 1;
-        break;
-      } else {
-        *dst = *p;
-      }
-      --n;
-      --max;
-      p++;
-      dst++;
-    }
-
-    srcva = va0 + PGSIZE;
-  }
-  if (got_null) {
-    return 0;
-  } else {
-    return -1;
-  }
+  w_sstatus(r_sstatus() | SSTATUS_SUM);
+  int ret = copyinstr_new(pagetable, dst, srcva, max);
+  w_sstatus(r_sstatus() & ~SSTATUS_SUM);
+  return ret;
 }
 
 // check if use global kpgtbl or not
