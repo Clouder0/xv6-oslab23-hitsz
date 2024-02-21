@@ -503,7 +503,9 @@ void scheduler(void) {
         c->proc = p;
         w_satp(MAKE_SATP(p->kpagetable));  // set kernel pagetable
         sfence_vma();
+        printf("switch into pid %d\n", p->pid);
         swtch(&c->context, &p->context);
+        printf("switch back to kernel, kernel pagetable %p\n", kernel_pagetable);
         w_satp(MAKE_SATP(kernel_pagetable));  // process run finished, set to global
         sfence_vma();
 
